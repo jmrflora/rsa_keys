@@ -6,7 +6,7 @@ version = "1.0.0"
 #
 description = "a small library to help with rsa keys"
 licences = ["Apache-2.0"]
-# repository = { type = "github", user = "jmrflora", repo = "" }
+repository = { type = "github", user = "jmrflora", repo = "rsa_keys" }
 # links = [{ title = "Website", href = "" }]
 #
 # For a full reference of all the available options, you can have a look at
