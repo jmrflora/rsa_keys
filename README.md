@@ -11,15 +11,19 @@ gleam add rsa_keys
 import rsa_keys
 
 pub fn main() {
-  // TODO: An example of the project in use
+  
+  let #(pubkey, prvtkey) = rsa_keys.generate_rsa_keys()
+
+  let result = {
+    use signature <- result.try(rsa_keys.sign_message("ola mundo", prvtkey))
+    rsa_keys.verify_message(
+      message: "ola mundo",
+      pubkey: pubkey,
+      sign: signature,
+    )
+  }
+  
 }
 ```
 
 Further documentation can be found at <https://hexdocs.pm/rsa_keys>.
-
-## Development
-
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-```
