@@ -4,8 +4,9 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/rsa_keys/)
 
 ```sh
-gleam add rsa_keys@1
+gleam add rsa_keys
 ```
+
 ```gleam
 import rsa_keys
 
