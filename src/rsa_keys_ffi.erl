@@ -1,4 +1,4 @@
--module(rsa_keys).
+-module(rsa_keys_ffi).
 
 -export([generate_rsa_key_pair/0, sign_message/2, verify_message/3]).
 
@@ -6,7 +6,7 @@
 
 generate_rsa_key_pair() ->
     % Generate RSA key pair
-    io:format("ola"),
+    io:format("ola mundo"),    
     PrivateKey = public_key:generate_key({rsa, 2048, 65537}),
     PublicKey =
         #'RSAPublicKey'{
