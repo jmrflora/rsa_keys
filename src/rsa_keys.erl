@@ -6,6 +6,7 @@
 
 generate_rsa_key_pair() ->
     % Generate RSA key pair
+    io:format("ola"),
     PrivateKey = public_key:generate_key({rsa, 2048, 65537}),
     PublicKey =
         #'RSAPublicKey'{
