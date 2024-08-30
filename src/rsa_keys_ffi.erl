@@ -6,7 +6,6 @@
 
 generate_rsa_key_pair() ->
     % Generate RSA key pair
-    io:format("ola mundo"),    
     PrivateKey = public_key:generate_key({rsa, 2048, 65537}),
     PublicKey =
         #'RSAPublicKey'{
@@ -21,7 +20,8 @@ generate_rsa_key_pair() ->
     PrivateKeyDer = public_key:der_encode('RSAPrivateKey', PrivateKey),
     PrivateKeyPem = public_key:pem_encode([{'RSAPrivateKey', PrivateKeyDer, not_encrypted}]),
 
-    {PublicKeyPem, PrivateKeyPem}.
+    {PublicKeyPem, PrivateKeyPem, PublicKeyDer, PrivateKeyDer}.
+
 
 sign_message(Msg, PrivateKeyPem) ->
     try
