@@ -1,7 +1,7 @@
 name = "rsa_keys"
-version = "0.1.1"
+version = "1.0.0"
 
-description = "a small library to help with rsa keys"
+description = "A small library to help with rsa keys and message signing"
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "jmrflora", repo = "rsa_keys" }
 

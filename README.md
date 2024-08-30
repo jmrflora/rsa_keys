@@ -21,14 +21,19 @@ pub fn main() {
   let #(pubkey, prvtkey) = rsa_keys.generate_rsa_keys()
 
   let result = {
-    use signature <- result.try(rsa_keys.sign_message("ola mundo", prvtkey))
+    use signature <- result.try(rsa_keys.sign_message(
+      bit_array.from_string("ola mundo"),
+      prvtkey,
+    ))
     rsa_keys.verify_message(
-      message: "ola mundo",
-      pubkey: pubkey,
-      sign: signature,
+      message: bit_array.from_string("ola mundo"),
+      public_key: pubkey,
+      signature: signature,
     )
   }
-  
+  should.be_ok(result)
+  |> should.be_true
+
 }
 ```
 
