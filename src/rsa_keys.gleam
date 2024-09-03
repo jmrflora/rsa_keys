@@ -2,6 +2,9 @@
 ////
 //// Funções simples e fáceis para gerar chaves rsa, assinar uma mensagem e verificála, usando erlang.
 
+import gleam/bit_array
+import gleam/result
+
 pub type PrivateKey {
   PrivateKey(der: BitArray, pem: String)
 }
@@ -13,6 +16,17 @@ pub type PublicKey {
 type SignatureType {
   ValidSignature
   InvalidSignature
+}
+
+@external(erlang, "rsa_keys_ffi", "decode_pem_to_der")
+fn do_decode_pem_to_der(
+  pem_encoded_key key: BitArray,
+) -> Result(BitArray, String)
+
+pub fn decode_pem_to_der(
+  pem_encoded_key key: String,
+) -> Result(BitArray, String) {
+  do_decode_pem_to_der(bit_array.from_string(key))
 }
 
 @external(erlang, "rsa_keys_ffi", "generate_rsa_key_pair")
@@ -41,6 +55,14 @@ pub fn sign_message(message msg: BitArray, private_key prvtkey: PrivateKey) {
   do_sign_message(msg, prvtkey.der)
 }
 
+pub fn sign_message_with_pem_string(
+  message msg: BitArray,
+  private_key_pem prvtkey_pem: String,
+) {
+  use private_key_der <- result.try(decode_pem_to_der(prvtkey_pem))
+  do_sign_message(msg, private_key_der)
+}
+
 @external(erlang, "rsa_keys_ffi", "verify_message")
 fn do_verify_message(
   msg: BitArray,
@@ -63,6 +85,23 @@ pub fn verify_message(
   case do_verify_message(msg, public_key.der, signature) {
     Ok(ValidSignature) -> Ok(True)
     Ok(InvalidSignature) -> Ok(False)
+    Error(reason) -> Error(reason)
+  }
+}
+
+pub fn verify_message_with_pem_string(
+  message msg: BitArray,
+  public_key_pem_string public_key_pem: String,
+  signature signature: BitArray,
+) {
+  case decode_pem_to_der(public_key_pem) {
+    Ok(public_key_der) -> {
+      case do_verify_message(msg, public_key_der, signature) {
+        Ok(ValidSignature) -> Ok(True)
+        Ok(InvalidSignature) -> Ok(False)
+        Error(reason) -> Error(reason)
+      }
+    }
     Error(reason) -> Error(reason)
   }
 }

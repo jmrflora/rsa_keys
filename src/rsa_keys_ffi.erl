@@ -1,6 +1,6 @@
 -module(rsa_keys_ffi).
 
--export([generate_rsa_key_pair/0, sign_message/2, verify_message/3]).
+-export([generate_rsa_key_pair/0, sign_message/2, verify_message/3, decode_pem_to_der/1]).
 
 -include_lib("public_key/include/public_key.hrl").
 
@@ -21,6 +21,33 @@ generate_rsa_key_pair() ->
     PrivateKeyPem = public_key:pem_encode([{'RSAPrivateKey', PrivateKeyDer, not_encrypted}]),
 
     {PublicKeyPem, PrivateKeyPem, PublicKeyDer, PrivateKeyDer}.
+
+decode_pem_to_der(KeyPem) ->
+    try
+        % Decode the PEM-encoded private key
+        KeyDerList = public_key:pem_decode(KeyPem),
+
+        % Ensure the PEM decoding returned at least one entry
+        case KeyDerList of
+            [{_, DerBinary, _}] ->
+                % Successfully extracted DER binary from the tuple
+                {ok, DerBinary};
+            [] ->
+                % Handle empty list (no valid PEM block found)
+                {error, empty_pem_list};
+            _ ->
+                % Handle unexpected format
+                {error, invalid_pem_format}
+        end
+    catch
+        % Catch decoding errors
+        error:badarg ->
+            {error, invalid_der_format};
+        % Catch other potential errors
+        _:Reason ->
+            {error, Reason}
+    end.
+
 
 sign_message(Msg, PrivateKeyDerBinary) ->
     try
