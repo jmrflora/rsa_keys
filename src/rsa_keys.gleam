@@ -23,6 +23,7 @@ fn do_decode_pem_to_der(
   pem_encoded_key key: BitArray,
 ) -> Result(BitArray, String)
 
+/// Decode a pem key to a der binary
 pub fn decode_pem_to_der(
   pem_encoded_key key: String,
 ) -> Result(BitArray, String) {
@@ -55,6 +56,7 @@ pub fn sign_message(message msg: BitArray, private_key prvtkey: PrivateKey) {
   do_sign_message(msg, prvtkey.der)
 }
 
+/// Same as sign_message but uses pem string as the argument.
 pub fn sign_message_with_pem_string(
   message msg: BitArray,
   private_key_pem prvtkey_pem: String,
@@ -89,6 +91,7 @@ pub fn verify_message(
   }
 }
 
+/// Same as verify_message but with pem string as the argument.
 pub fn verify_message_with_pem_string(
   message msg: BitArray,
   public_key_pem_string public_key_pem: String,
