@@ -1,6 +1,6 @@
 -module(rsa_keys_ffi).
 
--export([generate_rsa_key_pair/0, sign_message/2, verify_message/3, decode_pem_to_der/1]).
+-export([generate_rsa_key_pair/0, sign_message/2, verify_message/3, decode_pem_to_der/1, encrypt_message/2, decrypt_message/2]).
 
 -include_lib("public_key/include/public_key.hrl").
 
@@ -87,6 +87,73 @@ verify_message(Msg, PublicKeyDerBinary, Signature) ->
         error:badarg ->
             {error, invalid_der_format};
         % Catch other potential errors
+        _:Reason ->
+            {error, Reason}
+    end.
+
+
+encrypt_message(PlainTextBinary, PublicKeyDerBinary) ->
+    try
+        % Decode the binary DER to an RSA public key
+        PublicKey = public_key:der_decode('RSAPublicKey', PublicKeyDerBinary),
+
+
+        % Compute the SHA-256 hash of the message
+        Hash = crypto:hash(sha256, PlainTextBinary),
+
+        % Append the hash to the message
+        MessageWithHash = <<PlainTextBinary/binary, Hash/binary>>,
+
+        % Encrypt the message with the public key
+        EncryptedMessage = public_key:encrypt_public(MessageWithHash, PublicKey),
+
+        {ok, EncryptedMessage}
+    catch
+        error:badarg -> {error, invalid_der_format};
+        _:Reason -> {error, Reason}
+    end.
+
+
+decrypt_message(EncryptedMessage, PrivateKeyDerBinary) ->
+    case try_decode_private_key(PrivateKeyDerBinary) of
+        {ok, PrivateKey} ->
+            try
+                % Decrypt the message using the private key
+                DecryptedMessageWithHash = public_key:decrypt_private(EncryptedMessage, PrivateKey),
+
+                % Extract the message and hash (the last 32 bytes are the SHA-256 hash)
+                MessageLength = byte_size(DecryptedMessageWithHash) - 32,
+                <<DecryptedMessageBinary:MessageLength/binary, ExtractedHash/binary>> = DecryptedMessageWithHash,
+
+                % Recompute the hash of the decrypted message
+                RecomputedHash = crypto:hash(sha256, DecryptedMessageBinary),
+
+                % Compare the recomputed hash with the extracted hash
+                case RecomputedHash == ExtractedHash of
+                    true -> {ok, DecryptedMessageBinary};  % Hashes match, message is valid
+                    false -> {error, integrity}  % Hash mismatch, message was altered
+                end
+            catch
+                error:badarg ->
+                    {error, format};
+                _:Reason ->
+                    {error, Reason}
+            end;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+
+
+% Helper function to decode the RSA private key
+try_decode_private_key(PrivateKeyDerBinary) ->
+    try
+        % Decode the binary DER to an RSA private key
+        PrivateKey = public_key:der_decode('RSAPrivateKey', PrivateKeyDerBinary),
+        {ok, PrivateKey}
+    catch
+        error:badarg ->
+            {error, invalid_der_format};
         _:Reason ->
             {error, Reason}
     end.

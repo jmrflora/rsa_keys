@@ -1,4 +1,5 @@
 import gleam/bit_array
+import gleam/io
 import gleam/result
 import gleeunit
 import gleeunit/should
@@ -80,6 +81,33 @@ pub fn verify_msg_test() {
   }
   should.be_ok(result)
   |> should.be_false
+}
+
+pub fn encrypt_message_test() {
+  let #(pubkey, _prvtkey) = rsa_keys.generate_rsa_keys()
+
+  io.debug("here")
+  rsa_keys.encrypt_message(bit_array.from_string("ola"), pubkey)
+  |> bit_array.base16_encode
+  |> io.debug
+}
+
+pub fn decrypt_message_test() {
+  let #(pubkey, prvtkey) = rsa_keys.generate_rsa_keys()
+  let msg = rsa_keys.encrypt_message(bit_array.from_string("ola"), pubkey)
+
+  rsa_keys.decrypt_message(msg, prvtkey)
+  |> should.be_ok
+  |> bit_array.to_string
+  |> should.be_ok
+  |> io.debug
+
+  let #(pubkey2, _prvtkey2) = rsa_keys.generate_rsa_keys()
+  let msg2 = rsa_keys.encrypt_message(bit_array.from_string("ola"), pubkey2)
+
+  rsa_keys.decrypt_message(msg2, prvtkey)
+  |> should.be_error
+  |> io.debug
 }
 
 pub fn verify_message_pem_string_test() {

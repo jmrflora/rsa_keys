@@ -108,3 +108,36 @@ pub fn verify_message_with_pem_string(
     Error(reason) -> Error(reason)
   }
 }
+
+/// representation of decrypting errors 
+pub type ErrorDecrypt {
+  Integrity
+  Format
+}
+
+@external(erlang, "rsa_keys_ffi", "encrypt_message")
+fn do_encrypt_message(
+  msg: BitArray,
+  pubkey: BitArray,
+) -> Result(BitArray, String)
+
+/// encrypt a message and a hash attached to it's end for proper validation later.
+/// the message can then be base 16 encoded for readability/storage.
+pub fn encrypt_message(message msg: BitArray, pubkey pubkey: PublicKey) {
+  let assert Ok(m) = do_encrypt_message(msg, pubkey.der)
+  m
+}
+
+@external(erlang, "rsa_keys_ffi", "decrypt_message")
+fn do_decrypt_message(
+  msg: BitArray,
+  prvtkey: BitArray,
+) -> Result(BitArray, ErrorDecrypt)
+
+/// decrypt a message and it's hash, compare the two and return it if valid.
+pub fn decrypt_message(message msg: BitArray, private_key prvtkey: PrivateKey) {
+  case do_decrypt_message(msg, prvtkey.der) {
+    Error(e) -> Error(e)
+    Ok(m) -> Ok(m)
+  }
+}
