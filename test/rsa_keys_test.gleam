@@ -105,19 +105,8 @@ pub fn decrypt_message_test() {
   let #(pubkey2, _prvtkey2) = rsa_keys.generate_rsa_keys()
   let msg2 = rsa_keys.encrypt_message(bit_array.from_string("ola"), pubkey2)
 
-  let value = rsa_keys.decrypt_message(msg2, prvtkey)
-  case value {
-    Error(e) ->
-      case e {
-        rsa_keys.Integrity -> {
-          io.debug("integrity")
-          True
-        }
-        _ -> False
-      }
-    Ok(_) -> False
-  }
-  |> should.be_true
+  rsa_keys.decrypt_message(msg2, prvtkey)
+  |> should.be_error()
 }
 
 pub fn verify_message_pem_string_test() {
