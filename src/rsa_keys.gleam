@@ -113,6 +113,7 @@ pub fn verify_message_with_pem_string(
 pub type ErrorDecrypt {
   Integrity
   Format
+  Other
 }
 
 @external(erlang, "rsa_keys_ffi", "encrypt_message")
@@ -123,7 +124,10 @@ fn do_encrypt_message(
 
 /// encrypt a message and a hash attached to it's end for proper validation later.
 /// the message can then be base 16 encoded for readability/storage.
-pub fn encrypt_message(message msg: BitArray, pubkey pubkey: PublicKey) {
+pub fn encrypt_message(
+  message msg: BitArray,
+  pubkey pubkey: PublicKey,
+) -> BitArray {
   let assert Ok(m) = do_encrypt_message(msg, pubkey.der)
   m
 }

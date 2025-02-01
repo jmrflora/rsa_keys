@@ -1,27 +1,32 @@
 -module(rsa_keys_ffi).
 
--export([generate_rsa_key_pair/0, sign_message/2, verify_message/3, decode_pem_to_der/1, encrypt_message/2, decrypt_message/2]).
+-export([generate_rsa_key_pair/0, sign_message/2, verify_message/3, decode_pem_to_der/1,
+         encrypt_message/2, decrypt_message/2]).
 
 -include_lib("public_key/include/public_key.hrl").
 
 generate_rsa_key_pair() ->
     % Generate RSA key pair
-    PrivateKey = public_key:generate_key({rsa, 2048, 65537}),
-    PublicKey =
-        #'RSAPublicKey'{
-            modulus = PrivateKey#'RSAPrivateKey'.modulus,
-            publicExponent = PrivateKey#'RSAPrivateKey'.publicExponent
-        },
-    % Encode public key to PEM format
-    PublicKeyDer = public_key:der_encode('RSAPublicKey', PublicKey),
-    PublicKeyPem = public_key:pem_encode([{'RSAPublicKey', PublicKeyDer, not_encrypted}]),
-
-    % Encode private key to PEM format
-    PrivateKeyDer = public_key:der_encode('RSAPrivateKey', PrivateKey),
-    PrivateKeyPem = public_key:pem_encode([{'RSAPrivateKey', PrivateKeyDer, not_encrypted}]),
-
-    {PublicKeyPem, PrivateKeyPem, PublicKeyDer, PrivateKeyDer}.
-
+    case public_key:generate_key({rsa, 2048, 65537}) of
+        RSAPrivateKey = #'RSAPrivateKey'{ } ->
+            PublicKey =
+                #'RSAPublicKey'{
+                    modulus = RSAPrivateKey#'RSAPrivateKey'.modulus,
+                    publicExponent = RSAPrivateKey#'RSAPrivateKey'.publicExponent
+                },
+            % Encode public key to PEM format
+            PublicKeyDer = public_key:der_encode('RSAPublicKey', PublicKey),
+            PublicKeyPem = public_key:pem_encode([{'RSAPublicKey', PublicKeyDer, not_encrypted}]),
+    
+            % Encode private key to PEM format
+            PrivateKeyDer = public_key:der_encode('RSAPrivateKey', RSAPrivateKey),
+            PrivateKeyPem = public_key:pem_encode([{'RSAPrivateKey', PrivateKeyDer, 
+                                                      not_encrypted}]),
+    
+            {PublicKeyPem, PrivateKeyPem, PublicKeyDer, PrivateKeyDer};
+        Other ->
+            erlang:error({unexpected_key_format, Other})
+    end.
 decode_pem_to_der(KeyPem) ->
     try
         % Decode the PEM-encoded private key
@@ -47,7 +52,6 @@ decode_pem_to_der(KeyPem) ->
         _:Reason ->
             {error, Reason}
     end.
-
 
 sign_message(Msg, PrivateKeyDerBinary) ->
     try
@@ -79,8 +83,10 @@ verify_message(Msg, PublicKeyDerBinary, Signature) ->
 
         % Verify the signature
         case public_key:verify(HashedMsg, sha256, Signature, PublicKey) of
-            true -> {ok, valid_signature};
-            false -> {ok, invalid_signature}
+            true ->
+                {ok, valid_signature};
+            false ->
+                {ok, invalid_signature}
         end
     catch
         % Catch decoding errors
@@ -91,12 +97,10 @@ verify_message(Msg, PublicKeyDerBinary, Signature) ->
             {error, Reason}
     end.
 
-
 encrypt_message(PlainTextBinary, PublicKeyDerBinary) ->
     try
         % Decode the binary DER to an RSA public key
         PublicKey = public_key:der_decode('RSAPublicKey', PublicKeyDerBinary),
-
 
         % Compute the SHA-256 hash of the message
         Hash = crypto:hash(sha256, PlainTextBinary),
@@ -109,10 +113,11 @@ encrypt_message(PlainTextBinary, PublicKeyDerBinary) ->
 
         {ok, EncryptedMessage}
     catch
-        error:badarg -> {error, invalid_der_format};
-        _:Reason -> {error, Reason}
+        error:badarg ->
+            {error, invalid_der_format};
+        _:Reason ->
+            {error, Reason}
     end.
-
 
 decrypt_message(EncryptedMessage, PrivateKeyDerBinary) ->
     case try_decode_private_key(PrivateKeyDerBinary) of
@@ -123,27 +128,29 @@ decrypt_message(EncryptedMessage, PrivateKeyDerBinary) ->
 
                 % Extract the message and hash (the last 32 bytes are the SHA-256 hash)
                 MessageLength = byte_size(DecryptedMessageWithHash) - 32,
-                <<DecryptedMessageBinary:MessageLength/binary, ExtractedHash/binary>> = DecryptedMessageWithHash,
+                <<DecryptedMessageBinary:MessageLength/binary, ExtractedHash/binary>> =
+                    DecryptedMessageWithHash,
 
                 % Recompute the hash of the decrypted message
                 RecomputedHash = crypto:hash(sha256, DecryptedMessageBinary),
 
                 % Compare the recomputed hash with the extracted hash
                 case RecomputedHash == ExtractedHash of
-                    true -> {ok, DecryptedMessageBinary};  % Hashes match, message is valid
-                    false -> {error, integrity}  % Hash mismatch, message was altered
+                    true ->
+                        {ok, DecryptedMessageBinary};  % Hashes match, message is valid
+                    false ->
+                        {error, integrity}  % Hash mismatch, message was altered
                 end
             catch
                 error:badarg ->
                     {error, format};
                 _:Reason ->
-                    {error, Reason}
+                    {error, other}
             end;
         {error, Reason} ->
-            {error, Reason}
+
+            {error, other}
     end.
-
-
 
 % Helper function to decode the RSA private key
 try_decode_private_key(PrivateKeyDerBinary) ->
