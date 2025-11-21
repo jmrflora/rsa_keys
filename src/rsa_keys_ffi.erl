@@ -47,10 +47,11 @@ decode_pem_to_der(KeyPem) ->
     catch
         % Catch decoding errors
         error:badarg ->
-            {error, invalid_der_format};
+            {error, <<"invalid_der_format">>};
         % Catch other potential errors
         _:Reason ->
-            {error, Reason}
+            ErrorBin = list_to_binary(io_lib:format("~p", [Reason])),
+            {error, ErrorBin}
     end.
 
 sign_message(Msg, PrivateKeyDerBinary) ->
@@ -68,10 +69,11 @@ sign_message(Msg, PrivateKeyDerBinary) ->
     catch
         % Catch decoding errors
         error:badarg ->
-            {error, invalid_der_format};
+            {error, <<"invalid_der_format">>};
         % Catch other potential errors
         _:Reason ->
-            {error, Reason}
+            ErrorBin = list_to_binary(io_lib:format("~p", [Reason])),
+            {error, ErrorBin}
     end.
 
 verify_message(Msg, PublicKeyDerBinary, Signature) ->
@@ -91,10 +93,11 @@ verify_message(Msg, PublicKeyDerBinary, Signature) ->
     catch
         % Catch decoding errors
         error:badarg ->
-            {error, invalid_der_format};
+            {error, <<"invalid_der_format">>};
         % Catch other potential errors
         _:Reason ->
-            {error, Reason}
+            ErrorBin = list_to_binary(io_lib:format("~p", [Reason])),
+            {error, ErrorBin}
     end.
 
 encrypt_message(PlainTextBinary, PublicKeyDerBinary) ->
@@ -114,9 +117,10 @@ encrypt_message(PlainTextBinary, PublicKeyDerBinary) ->
         {ok, EncryptedMessage}
     catch
         error:badarg ->
-            {error, invalid_der_format};
+            {error, <<"invalid_der_format">>};
         _:Reason ->
-            {error, Reason}
+            ErrorBin = list_to_binary(io_lib:format("~p", [Reason])),
+            {error, ErrorBin}
     end.
 
 decrypt_message(EncryptedMessage, PrivateKeyDerBinary) ->
@@ -139,17 +143,17 @@ decrypt_message(EncryptedMessage, PrivateKeyDerBinary) ->
                     true ->
                         {ok, DecryptedMessageBinary};  % Hashes match, message is valid
                     false ->
-                        {error, integrity}  % Hash mismatch, message was altered
+                        {error, <<"integrity">>}  % Hash mismatch, message was altered
                 end
             catch
                 error:badarg ->
-                    {error, format};
-                _:Reason ->
-                    {error, other}
+                    {error, <<"format">>};
+                _:_ ->
+                    {error, <<"other">>}
             end;
-        {error, Reason} ->
+        {error, _} ->
 
-            {error, other}
+            {error, <<"other">>}
     end.
 
 % Helper function to decode the RSA private key
@@ -160,7 +164,8 @@ try_decode_private_key(PrivateKeyDerBinary) ->
         {ok, PrivateKey}
     catch
         error:badarg ->
-            {error, invalid_der_format};
+            {error, <<"invalid_der_format">>};
         _:Reason ->
-            {error, Reason}
+            ErrorBin = list_to_binary(io_lib:format("~p", [Reason])),
+            {error, ErrorBin}
     end.
